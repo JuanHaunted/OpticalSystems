@@ -12,5 +12,5 @@ system = [primary_mirror, secondary_mirror, deg_mirror, eyepiece]
 system_2 = [primary_mirror, secondary_mirror, deg_mirror, thick_eyepiece, eye]
 dist = [-59.7745, 2990, 960]
 
-afocal_telescope = opi.OpticalSystem(system, dist)
-print(afocal_telescope.ABCD_matrix)
+cassegrain_telescope = opi.OpticalSystem(system, dist)
+print(cassegrain_telescope.ABCD_matrix)

@@ -127,12 +127,12 @@ def ray_tracing(width, height, rayo, so, n1, si, obj, res, pixels):
             pos_x_prime = int(x_prime + width_output/2)
             pos_y_prime = int(y_prime + height_output/2)
             
-            if  pos_x_prime < 0 or pos_x_prime >= width_output:
+            if pos_x_prime < 0 or pos_x_prime >= width_output:
             	continue
-            	
-            if  pos_y_prime < 0 or pos_y_prime >= height_output:
+
+            if pos_y_prime < 0 or pos_y_prime >= height_output:
             	continue
-                     
+
             if rayo == 0: #principal   
                 pixels[pos_x_prime, pos_y_prime] = (int(pixel), int(pixel), int(pixel))
             elif rayo == 1: #parallel    
@@ -174,7 +174,7 @@ res = 0.0001 #each pixel equals 0.1 mm
 
 #load image (Object!)
 #obj = Image.open("saturn.jpg", "r")
-obj = Image.open("images/eiffel.jpg", "r")
+obj = Image.open("images/moon.jpg", "r")
 width, height = obj.size
 
 width_output = int(width*(abs(Mt)))
@@ -197,7 +197,7 @@ if (np.abs(Mt) > 1.0):
   pass
 
 #Save Images to File
-image.save('output/eiffel225_out.png', format='PNG')
+image.save('output/moon_out.png', format='PNG')
 
 #img = cv2.imread('output/eiffel_out.png',1)
 #height, width = img.shape[:2]
