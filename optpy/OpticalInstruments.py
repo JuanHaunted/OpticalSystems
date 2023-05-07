@@ -4,7 +4,7 @@ class ThinLens:
     def __init__(self, focal_length, n = 1):
         self.focal_lenght = focal_length
         self.n = n
-        self.transference_matrix = np.array([[1, 0],[-n/focal_length, 0]])
+        self.transference_matrix = np.array([[1, 0],[-n/focal_length, 1]])
 
     def get_transference_matrix(self):
         return self.transference_matrix
@@ -108,7 +108,7 @@ class ThickLens:
         self.r2 = -R2
         self.d = dl
         self.n = nl
-        self.transferene_matrix = np.array([[a1, a2], [a3, a4]])
+        self.transference_matrix = np.array([[a1, a3], [a2, a4]])
     
     def get_transference_matrix(self):
         return self.transferene_matrix
@@ -121,22 +121,22 @@ class ThickLens:
 
     
 class OpticalSystem:
-    def __init__(self, si, so, optical_elements = [], distances = []):
+    def __init__(self, optical_elements = [] , distances = []):
         self.optical_elements = optical_elements
-        self.distances = distances .
-        distances = distances.reverse()
-        optical_elements = optical_elements.reverse()
-        initial_propagation = np.array([[1, so],[0, 1]])
-        final_propagation = np.array([[1, si],[0, 1]])
-        self.telescope_matrix = np.identity()
-        self.ABCD_matrix = np.identity()
+        self.distances = distances
+        self.rev_optical_elements = list(reversed(optical_elements))
+        self.rev_distances = list(reversed(distances))
+        self.ABCD_matrix = np.identity(2)
+
         
+        for i in range(len(self.optical_elements)):
+            self.ABCD_matrix = self.ABCD_matrix @ self.rev_optical_elements[i].transference_matrix
+            if i != len(self.optical_elements) - 1:
+                self.ABCD_matrix = self.ABCD_matrix @ np.array([[1, self.rev_distances[i]], [0, 1]])
+            
+            
+                
 
-        for i in range(len(optical_elements)):
-            self.ABCD_matrix = self.ABCD_matrix @ optical_elements[i].transference_matrix
-            if i != len(optical_elements) - 1:
-                self.ABCD_matrix @ np.array([[1, distances[i]], [0, 1]])
-
-
-        self.propagation_matrix = final_propagation @ self.ABCD_matrix @ initial_propagation
+            
+        
     

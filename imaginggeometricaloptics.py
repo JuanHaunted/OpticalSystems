@@ -7,6 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1SugD_BD_g3LGevAtyqYlsdlR-lLWTbCr
 """
 
+from optpy.test import ABCD, no_eyepiece, ABCD_2
+
+import cv2
 
 # -*- coding: utf-8 -*-
 """
@@ -78,8 +81,10 @@ def compute_lens_matrix(nl, R1, R2, dl):
 def ray_tracing(width, height, rayo, so, n1, si, obj, res, pixels):
     
     # Compute lens matrix using parameters nl, R1, R2, and dl
-    A = compute_lens_matrix(nl, R1, R2, dl)
+    #A = compute_lens_matrix(nl, R1, R2, dl)
+    #A = np.array([[9.30341614e+01 , 1], [2.33701102e-02 ,1.68600179e+00]])
 
+    A = ABCD_2
     # Define propagation matrices after and before the lens
     P2 = np.array([[1,0],[si/n1,1]])
     P1 = np.array([[1,0],[-so/n1,1]])
@@ -145,21 +150,23 @@ nl = 1.5
 
 #Computing the lens' focal distance
 f = R1*R2/((R2-R1)*(nl-1))
+f = 3910
 print("focal: ", f)
 
 #Propagation distances before and after the lens
 #Object distance
-so = 0.1
+so = 10
 
 #To guarantee conjugated planes
-si = (f*so)/(so-f)
-#si = 0.65
+#si = (f*so)/(so-f)
+si = 0.17
 print("si: ", si)
 
 n1 = 1 #Air index of refraction 
 
 #Magnification
 Mt = -si/so
+Mt = 1
 print ("Mt: ", Mt)
 
 #Pixel size to real world size conversion
@@ -167,7 +174,7 @@ res = 0.0001 #each pixel equals 0.1 mm
 
 #load image (Object!)
 #obj = Image.open("saturn.jpg", "r")
-obj = Image.open("images/saturn.jpg", "r")
+obj = Image.open("images/eiffel.jpg", "r")
 width, height = obj.size
 
 width_output = int(width*(abs(Mt)))
@@ -190,4 +197,13 @@ if (np.abs(Mt) > 1.0):
   pass
 
 #Save Images to File
-image.save('output/saturn_out.png', format='PNG')
+image.save('output/eiffel225_out.png', format='PNG')
+
+#img = cv2.imread('output/eiffel_out.png',1)
+#height, width = img.shape[:2]
+#res = cv2.resize(img, width, height, interpolation =
+#cv2.INTER_NEAREST)
+
+#cv2.imshow('image',res)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
