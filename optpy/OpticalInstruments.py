@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import math
+from scipy.interpolate import griddata
 
 class ThinLens:
     def __init__(self, focal_length, n = 1):
@@ -122,6 +123,7 @@ class ThickLens:
         print(f'r1 = {self.r1}\n r2 = {self.r2} \n d = {self.d} \n n = {self.n}')
 
 class OpticalSystem:
+
     def __init__(self, optical_elements = [] , distances = []):
         self.optical_elements = optical_elements
         self.distances = distances
@@ -137,7 +139,6 @@ class OpticalSystem:
             
 
 
-
     def observe(self, object_path, so, si, sensor, res, n_sensor = 1 ,type = 'eye', dist_eyepice_sensor = 20):
         object = Image.open(object_path, "r")
         width, height = object.size
@@ -145,7 +146,7 @@ class OpticalSystem:
         mt = self.ABCD_matrix[0, 0] 
 
         # It is needed because most images would get extremely big if normal mt was used
-        usable_mt = abs(mt/20) #20 is an arbitrary atenuator of transverse magnification factor
+        usable_mt = mt/15 #20 is an arbitrary atenuator of transverse magnification factor
         
         # Output weight 
         width_output = int(width*(abs(usable_mt)))
@@ -162,6 +163,7 @@ class OpticalSystem:
                 pos_y = j
 
                 pixel = object.getpixel((pos_x, pos_y))
+               
 
                 #Generate approximate center coordinates for the image
                 x = pos_x - width/2
@@ -175,38 +177,91 @@ class OpticalSystem:
 
                 #For objects in infinite all rays enter parallel
                 alpha = 0
-                ray_e = np.array([y_object, alpha]) #Enter ray
+                ray_e = np.array([y_object, alpha]).reshape(2, 1) #Enter ray
 
-                ray_s = np.array([1, si][0, 1]) @ sensor.transference_matrix @ dist_eyepice_sensor @ self.ABCD_matrix @ np.array([1, n_sensor/so][0, 1])
+                #Principal_ray
+                entry_angles = np.linspace(0, 0.04548328, 20) #2.606 grados #0.04548328
 
-                y_image = ray_s[0]
+                for alpha in entry_angles:
+                    ray_ie = np.array([y_object, alpha]).reshape(2, 1)
+                    d = dist_eyepice_sensor
+                    ray_is = np.array([[1, si],[0, 1]]) @ sensor.transference_matrix @ np.array([[1, d],[0, 1]]) @ self.ABCD_matrix @ np.array([[1, n_sensor/so],[0, 1]]) @ ray_ie
 
-                Mt = y_image / y_object
-
-                #Conversion from image coordinates to mirror coordinates        
-                x_prime = Mt*x
-                y_prime = Mt*y
-
-                pos_x_prime = int(x_prime + width_output/2)
-                pos_y_prime = int(y_prime + height_output/2)
+                    y_image = ray_is[0]
+                    Mt = y_image / y_object
 
 
-                converged = 0
+                    x_prime = Mt*x
+                    y_prime = Mt*y
 
-                if pos_y_prime < 0 or pos_y_prime >= height_output:   
-                    continue 
-                elif pos_x_prime < 0 or pos_x_prime >= width_output:
-            	    continue
-            
+                    pos_x_prime = int(x_prime + width_output/2)
+                    pos_y_prime = int(y_prime + height_output/2)
 
-                new_gray = (int(pixel) + pixels[pos_x_prime, pos_y_prime][0])/2
-                pix_fin = ( int(new_gray), int(new_gray), int(new_gray) )        
-                pixels[pos_x_prime, pos_y_prime] = pix_fin
+                    if pos_y_prime <= 0 or pos_y_prime >= height_output:   
+                        continue 
+                    elif pos_x_prime <= 0 or pos_x_prime >= width_output:
+            	        continue
+                    
+                    rays_lost = 0
+                    try:
+                        new_gray = (int(pixel) + pixels[pos_x_prime, pos_y_prime][0])/2
+                    except:
+                        rays_lost += 1
 
-                return pixels
+                    pix_fin = ( int(new_gray), int(new_gray), int(new_gray) )        
+                    pixels[pos_x_prime, pos_y_prime] = pix_fin
 
 
+        print('rays_lost')
 
+        image.save('output/moon_out.png', format='PNG')
+
+        return pixels, width_output, height_output
+    
+
+    def visualize_results(self, image_path):
+        obj = Image.open(image_path, "r")
+        width, height = obj.size
+        pixels = obj.load()
+        pixels = opi.interpolation(pixels, width, height)
+        for col in range(width):
+            for row in range(height):
+                if pixels[col,row] == (255, 0, 0):
+                    pixels[col,row] = (0, 0 ,0)
+
+        obj.show()
+
+
+def interpolation (pixels, width_output, height_output):
+
+  arry = np.zeros((width_output, height_output))
+  for i in range(width_output):
+    for j in range(height_output):
+      arry[i,j] = pixels[i,j][0]
+
+  # Get the coordinates of the non-white pixels
+  nonwhite_coords = np.argwhere(arry != 255)
+  # Get the coordinates of the white pixels
+  white_coords = np.argwhere(arry == 255)
+
+  # Get the pixel values of the non-white pixels
+  nonwhite_pixels = arry[nonwhite_coords[:,0], nonwhite_coords[:,1]]
+
+  # Interpolate the pixel values of the white pixels
+  interpolated_pixels = griddata(nonwhite_coords, nonwhite_pixels, white_coords, method='linear', rescale=True)
+
+  #Change resulting NaN values with some value (zero, for instance)
+  interpolated_pixels = np.nan_to_num(interpolated_pixels, nan=127.0)
+
+  #Round interpolated values to integers
+  int_out = np.round(interpolated_pixels).astype(int)
+
+  #Fill white pixels locations with interpolated values
+  for i in range(int_out.shape[0]):
+    pixels[white_coords[i,0], white_coords[i,1] ] = ( int_out[i], int_out[i], int_out[i] )
+
+  #Returne pixels array with interpolated values
+  return pixels
                 
 
 
