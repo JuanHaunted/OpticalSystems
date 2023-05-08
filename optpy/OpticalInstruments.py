@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import math
 
 class ThinLens:
     def __init__(self, focal_length, n = 1):
@@ -137,7 +138,7 @@ class OpticalSystem:
 
 
 
-    def observe(self, object_path, so, si, sensor, res, n_sensor = 1,type = 'eye', dist_eyepice_sensor = 20):
+    def observe(self, object_path, so, si, sensor, res, n_sensor = 1 ,type = 'eye', dist_eyepice_sensor = 20):
         object = Image.open(object_path, "r")
         width, height = object.size
 
@@ -163,9 +164,53 @@ class OpticalSystem:
                 pixel = object.getpixel((pos_x, pos_y))
 
                 #Generate approximate center coordinates for the image
+                x = pos_x - width/2
+                y = pos_y - height/2
+
+
+                #Calculate distance from center to pixel
+                r = math.sqrt((x*x) + (y*y)) + 1
+
+                y_object = r * res #Resolution equals size of pixel in mm
+
+                #For objects in infinite all rays enter parallel
+                alpha = 0
+                ray_e = np.array([y_object, alpha]) #Enter ray
+
+                ray_s = np.array([1, si][0, 1]) @ sensor.transference_matrix @ dist_eyepice_sensor @ self.ABCD_matrix @ np.array([1, n_sensor/so][0, 1])
+
+                y_image = ray_s[0]
+
+                Mt = y_image / y_object
+
+                #Conversion from image coordinates to mirror coordinates        
+                x_prime = Mt*x
+                y_prime = Mt*y
+
+                pos_x_prime = int(x_prime + width_output/2)
+                pos_y_prime = int(y_prime + height_output/2)
+
+
+                converged = 0
+
+                if pos_y_prime < 0 or pos_y_prime >= height_output:   
+                    continue 
+                elif pos_x_prime < 0 or pos_x_prime >= width_output:
+            	    continue
+            
+
+                new_gray = (int(pixel) + pixels[pos_x_prime, pos_y_prime][0])/2
+                pix_fin = ( int(new_gray), int(new_gray), int(new_gray) )        
+                pixels[pos_x_prime, pos_y_prime] = pix_fin
+
+                return pixels
+
+
+
                 
 
 
+            
 
             
                 
