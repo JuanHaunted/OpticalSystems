@@ -122,6 +122,8 @@ class ThickLens:
     def get_specs(self):
         print(f'r1 = {self.r1}\n r2 = {self.r2} \n d = {self.d} \n n = {self.n}')
 
+    
+
 class OpticalSystem:
 
     def __init__(self, optical_elements = [] , distances = []):
@@ -139,14 +141,14 @@ class OpticalSystem:
             
 
 
-    def observe(self, object_path, so, si, sensor, res, n_sensor = 1 ,type = 'eye', dist_eyepice_sensor = 20):
+    def observe(self, object_path, so, si, sensor, res, n_so = 1 ,type = 'eye', dist_eyepice_sensor = 20):
         object = Image.open(object_path, "r")
         width, height = object.size
 
         mt = self.ABCD_matrix[0, 0] 
 
         # It is needed because most images would get extremely big if normal mt was used
-        usable_mt = mt/15 #20 is an arbitrary atenuator of transverse magnification factor
+        usable_mt = mt/13 #20 is an arbitrary atenuator of transverse magnification factor
         
         # Output weight 
         width_output = int(width*(abs(usable_mt)))
@@ -176,8 +178,8 @@ class OpticalSystem:
                 y_object = r * res #Resolution equals size of pixel in mm
 
                 #For objects in infinite all rays enter parallel
-                alpha = 0
-                ray_e = np.array([y_object, alpha]).reshape(2, 1) #Enter ray
+                #alpha = 0
+                #ray_e = np.array([y_object, alpha]).reshape(2, 1) #Enter ray
 
                 #Principal_ray
                 entry_angles = np.linspace(0, 0.04548328, 20) #2.606 grados #0.04548328
@@ -185,7 +187,7 @@ class OpticalSystem:
                 for alpha in entry_angles:
                     ray_ie = np.array([y_object, alpha]).reshape(2, 1)
                     d = dist_eyepice_sensor
-                    ray_is = np.array([[1, si],[0, 1]]) @ sensor.transference_matrix @ np.array([[1, d],[0, 1]]) @ self.ABCD_matrix @ np.array([[1, n_sensor/so],[0, 1]]) @ ray_ie
+                    ray_is = np.array([[1, si],[0, 1]]) @ sensor.transference_matrix @ np.array([[1, d],[0, 1]]) @ self.ABCD_matrix @ np.array([[1, n_so/so],[0, 1]]) @ ray_ie
 
                     y_image = ray_is[0]
                     Mt = y_image / y_object
@@ -212,7 +214,7 @@ class OpticalSystem:
                     pixels[pos_x_prime, pos_y_prime] = pix_fin
 
 
-        print('rays_lost')
+        print(rays_lost)
 
         image.save('output/moon_out.png', format='PNG')
 
@@ -223,7 +225,7 @@ class OpticalSystem:
         obj = Image.open(image_path, "r")
         width, height = obj.size
         pixels = obj.load()
-        pixels = opi.interpolation(pixels, width, height)
+        pixels = interpolation(pixels, width, height)
         for col in range(width):
             for row in range(height):
                 if pixels[col,row] == (255, 0, 0):
