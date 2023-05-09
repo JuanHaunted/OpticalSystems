@@ -20,11 +20,16 @@ resolution = 49.66 * 1e+6 #Pixel size in mm
 so = 384400 * 1e+6 #Distance to object
 si = 18.78 * 1e-6 #Distance to image
 
+atten = 14
+#data = cassegrain_telescope.observe(obj_path, so, si, eye, resolution, atten)
 
-data = cassegrain_telescope.observe(obj_path, so, si, eye, resolution)
+#Aberrated DATA
+aberrated_data = cassegrain_telescope.observe_spherical_aberration(obj_path, so, si, eye, resolution, atten)
+
+
 
 #We interpolate and visualize results
-cassegrain_telescope.visualize_results('ouput/moon_out.png')
+#cassegrain_telescope.visualize_results('ouput/moon_out.png')
 
 #image.save('output/moon_out.png', format='PNG')
 
